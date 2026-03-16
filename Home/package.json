@@ -1,0 +1,14 @@
+{
+  "name": "home-builder-planner",
+  "version": "1.0.0",
+  "description": "Full-stack application for Home Builder Planner",
+  "main": "index.js",
+  "scripts": {
+    "client": "npm run dev --prefix Home_Web",
+    "server": "node server/index.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
