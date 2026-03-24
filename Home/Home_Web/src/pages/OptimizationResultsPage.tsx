@@ -4,7 +4,7 @@ import { useProject } from '../context/ProjectContext';
 import { ArrowLeft, Grid, AppWindow, PaintRoller, Loader2 } from 'lucide-react';
 
 const mockSuggestions = [
-    { id: 'tiles', title: 'Tile Selection Optimization', savings: 12000, desc: 'Switching to bulk-grade vitrified tiles.', icon: Grid },
+    { id: 'tiles', title: 'Elite Flooring Swap', savings: 97500, desc: 'Use Premium GVT tiles (₹150/sqft) in bedrooms instead of Italian marble (₹800/sqft).', icon: Grid },
     { id: 'windows', title: 'Window Frame Optimization', savings: 9000, desc: 'Using UPVC instead of hardwood frames.', icon: AppWindow },
     { id: 'paint', title: 'Paint Application Optimization', savings: 7000, desc: 'Optimized base layer coating strategy.', icon: PaintRoller }
 ];

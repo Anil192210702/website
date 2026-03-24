@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { authApi } from '../services/api';
+import { validatePassword } from '../utils/validation';
 
 // Logo Imports
 import simatsLogo from '../assets/simats_logo.jpeg';
@@ -44,9 +45,9 @@ const ResetPasswordPage = () => {
             return;
         }
 
-        // Add password complexity validation
-        if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
-            setError('Password must contain at least one capital letter, one number, and one special character');
+        const passwordCheck = validatePassword(newPassword);
+        if (!passwordCheck.isValid) {
+            setError(passwordCheck.error || 'Invalid password');
             return;
         }
 

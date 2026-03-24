@@ -81,11 +81,10 @@ const HomePage = () => {
                 </button>
 
                 {!state.isLoggedIn && (
-                    <div className="absolute inset-x-0 bottom-0 pb-12 flex justify-center items-end">
-                        {/* Bottom-aligned button in the center */}
+                    <div className="absolute inset-x-0 bottom-0 pb-12 flex justify-center items-end z-20">
                         <button
                             onClick={() => navigate('/login')}
-                            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-10 rounded shadow-lg transition-colors text-lg"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded shadow-lg transition-colors text-lg"
                         >
                             Start Cost Estimation
                         </button>

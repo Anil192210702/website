@@ -58,7 +58,7 @@ const PackageSelectionPage = () => {
     const isPremium = pkg === 'premium';
 
     const handleCalculate = () => {
-        navigate(`/construction/optimization/${pkg}`);
+        navigate(`/construction/cost-estimate/${pkg}`);
     };
 
     if (isLuxury) {
@@ -135,7 +135,7 @@ const PackageSelectionPage = () => {
                                 <p className="text-xs text-gray-500 mt-0.5">{m.spec}</p>
                                 <p className="text-[10px] text-gray-400 mt-0.5">{m.brand}</p>
 
-                                <div className="mt-2 w-max mx-auto px-2 py-0.5 rounded bg-orange-50 text-orange-500 text-[8px] font-bold">
+                                <div className="mt-2 w-max mx-auto px-2 py-0.5 rounded bg-blue-50 text-blue-500 text-[8px] font-bold">
                                     {m.badge}
                                 </div>
                             </div>

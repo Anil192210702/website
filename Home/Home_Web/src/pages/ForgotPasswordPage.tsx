@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, ArrowLeft } from 'lucide-react';
 import { authApi } from '../services/api';
+import { validateEmail } from '../utils/validation';
 
 // Logo Imports
 import simatsLogo from '../assets/simats_logo.jpeg';
@@ -25,8 +26,8 @@ const ForgotPasswordPage = () => {
             return;
         }
 
-        if (!email.trim().toLowerCase().endsWith('@gmail.com')) {
-            setError('Only @gmail.com email addresses are accepted');
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address (must contain @ and end with .com)');
             return;
         }
 

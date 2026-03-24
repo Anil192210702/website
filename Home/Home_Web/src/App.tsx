@@ -29,10 +29,13 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import OtpVerificationPage from './pages/OtpVerificationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
+import ScrollToTop from './components/ScrollToTop';
+
 function App() {
     return (
         <ProjectProvider>
             <BrowserRouter>
+                <ScrollToTop />
                 <Routes>
                     <Route element={<MainLayout />}>
                         <Route path="/" element={<HomePage />} />

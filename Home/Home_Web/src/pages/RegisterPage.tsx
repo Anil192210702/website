@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Phone, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { authApi } from '../services/api';
+import { validateFullName, validateEmail, validatePhone, validatePassword } from '../utils/validation';
 
 // Logo Imports
 import simatsLogo from '../assets/simats_logo.jpeg';
@@ -31,28 +32,24 @@ const RegisterPage = () => {
             setError('Please fill all fields');
             return;
         }
-        if (!email.trim().toLowerCase().endsWith('@gmail.com')) {
-            setError('Only @gmail.com email addresses are accepted');
+        if (!validateFullName(fullName.trim())) {
+            setError('Full name should only contain letters and numbers');
             return;
         }
-        if (phoneNumber.length !== 10) {
-            setError('Phone number must be 10 digits');
+
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address (must contain @ and end with .com)');
             return;
         }
-        if (!['6', '7', '8', '9'].includes(phoneNumber[0])) {
-            setError('Phone number must start with 6, 7, 8, or 9');
+
+        if (!validatePhone(phoneNumber)) {
+            setError('Phone number must start with 6, 7, 8, or 9 and be exactly 10 digits');
             return;
         }
-        if (!/[A-Z]/.test(password)) {
-            setError('Password must contain at least one capital letter');
-            return;
-        }
-        if (!/[0-9]/.test(password)) {
-            setError('Password must contain at least one number');
-            return;
-        }
-        if (!/[^A-Za-z0-9]/.test(password)) {
-            setError('Password must contain at least one special character');
+
+        const passwordCheck = validatePassword(password);
+        if (!passwordCheck.isValid) {
+            setError(passwordCheck.error || 'Invalid password');
             return;
         }
         if (!isAgreed) {
@@ -94,15 +91,15 @@ const RegisterPage = () => {
                 </button>
             </div>
 
-            <div className="flex flex-col px-6 md:w-full max-w-7xl md:mx-auto w-full flex-1">
+            <div className="flex flex-col px-6 md:w-full max-w-md md:mx-auto w-full flex-1 justify-center py-10">
                 {/* Top Logos Row - Exactly matching HomePlanner Design */}
-                <div className="w-full flex justify-between items-center py-4">
-                    <img src={simatsLogo} alt="Simats Logo" className="w-16 h-16 object-contain" />
-                    <img src={interfaceLogo} alt="Interface Logo" className="w-20 h-20 object-contain" />
-                    <img src={simatsImage} alt="Simats" className="w-16 h-16 object-contain" />
+                <div className="w-full flex justify-between items-center py-6">
+                    <img src={simatsLogo} alt="Simats Logo" className="w-20 h-20 object-contain" />
+                    <img src={interfaceLogo} alt="Interface Logo" className="w-24 h-24 object-contain" />
+                    <img src={simatsImage} alt="Simats" className="w-20 h-20 object-contain" />
                 </div>
 
-                <div className="mt-2 mb-8">
+                <div className="mt-4 mb-8">
                     <h1 className="text-4xl font-black text-[#001A3F] mb-3 tracking-tight">Create Account</h1>
                     <p className="text-gray-500 text-[17px] leading-relaxed max-w-sm">Sign up to track every rupee of your build.</p>
                 </div>

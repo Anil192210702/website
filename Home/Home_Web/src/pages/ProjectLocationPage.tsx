@@ -192,7 +192,7 @@ const ProjectLocationPage = () => {
     const [selectedCity, setSelectedCity] = useState(state.construction.location || '');
     const [isStateOpen, setIsStateOpen] = useState(false);
     const [isCityOpen, setIsCityOpen] = useState(false);
-    const [landArea, setLandArea] = useState('');
+    const [landArea, setLandArea] = useState(state.construction.landArea?.toString() || '');
     const [builtUpArea, setBuiltUpArea] = useState(state.construction.area?.toString() || '');
     const [unit, setUnit] = useState(state.construction.unit || 'Sq. Feet');
     const [floors, setFloors] = useState(state.construction.floors || 'Ground');
@@ -201,6 +201,7 @@ const ProjectLocationPage = () => {
         updateConstruction({
             state: selectedState,
             location: selectedCity,
+            landArea: Number(landArea),
             area: Number(builtUpArea),
             unit: unit,
             floors: floors
@@ -309,6 +310,9 @@ const ProjectLocationPage = () => {
                         </div>
                     </div>
                 </div>
+                {Number(builtUpArea) > Number(landArea) && landArea !== '' && (
+                    <p className="text-red-500 text-xs font-medium mb-4">Built-up area cannot exceed land area</p>
+                )}
 
                 {/* Unit Toggle */}
                 <div className="flex border border-gray-200 rounded-xl h-12 mb-8 overflow-hidden">
@@ -360,7 +364,7 @@ const ProjectLocationPage = () => {
             <div className="p-6 bg-white absolute bottom-0 left-0 right-0">
                 <button
                     onClick={handleNext}
-                    disabled={!selectedState || !selectedCity || !builtUpArea || Number(builtUpArea) <= 0}
+                    disabled={!selectedState || !selectedCity || !builtUpArea || !landArea || Number(builtUpArea) <= 0 || Number(builtUpArea) > Number(landArea)}
                     className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                     Next: Floor Details

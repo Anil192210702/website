@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 type ProjectState = {
     isLoggedIn: boolean;
@@ -11,12 +12,14 @@ type ProjectState = {
         packageType: string;
         location: string;
         state: string;
+        landArea: number;
         area: number;
         unit: string;
         floors: string;
         optimizationSavings: number;
         totalCost: number;
         inCart: boolean;
+        finalResponse?: any;
     };
     interior: {
         packageType: string;
@@ -26,6 +29,7 @@ type ProjectState = {
         roomConfigs: Record<string, any[]>;
         totalCost: number;
         inCart: boolean;
+        calculationResult?: any;
     };
 };
 
@@ -50,10 +54,10 @@ type ProjectContextType = {
     updateConstruction: (data: Partial<ProjectState['construction']>) => void;
     updateInterior: (data: Partial<ProjectState['interior']>) => void;
     setUserName: (name: string) => void;
-    updateProfile: (data: { name: string; email: string; phone: string; userId?: string | null; profileImage?: string | null }) => void;
+    updateProfile: (data: { name: string; email: string; phone: string; userId?: string | null; profileImage?: string | null }, skipSync?: boolean) => void;
     logout: () => void;
     resetProject: () => void;
-    saveProject: (project: Omit<SavedProject, 'id' | 'date' | 'userName'>) => void;
+    saveProject: (project: Omit<SavedProject, 'id' | 'date' | 'userName'>, customId?: string) => void;
     getProjects: () => SavedProject[];
     deleteProject: (id: string) => void;
     loadProject: (id: string) => void;
@@ -70,6 +74,7 @@ const initialState: ProjectState = {
         packageType: 'Basic',
         location: '',
         state: '',
+        landArea: 1000,
         area: 1000,
         unit: 'Sq. Feet',
         floors: 'Ground',
@@ -88,6 +93,8 @@ const initialState: ProjectState = {
     },
 };
 
+import { constructionApi, interiorApi } from '../services/api';
+
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -103,9 +110,143 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return initialState;
     });
 
+    const [refreshLocal, setRefreshLocal] = useState(false);
+
+    // 1. Persist local state
     useEffect(() => {
         localStorage.setItem('project_state', JSON.stringify(state));
     }, [state]);
+
+    // 2. Fetch from backend and sync with local storage
+    useEffect(() => {
+        const syncProjects = async () => {
+            if (state.isLoggedIn && state.userId) {
+                try {
+                    console.log('Syncing projects with backend for user:', state.userId);
+                    const [constructionRes, interiorRes] = await Promise.all([
+                        constructionApi.listProjects(state.userId),
+                        interiorApi.listEstimates(state.userId)
+                    ]);
+
+                    const localProjects = getProjects();
+                    const backendProjects: SavedProject[] = [];
+
+                    // Map construction projects
+                    constructionRes.data.forEach((p: any) => {
+                        const id = `backend_c_${p.id}`;
+                        backendProjects.push({
+                            id: id,
+                            type: 'CONSTRUCTION',
+                            date: new Date(p.created_at).getTime(),
+                            state: p.state,
+                            city: p.city,
+                            packageName: p.package,
+                            totalCost: p.optimized_total_cost || p.base_total_cost,
+                            userName: state.userName,
+                            constructionData: {
+                                ...state.construction,
+                                area: p.built_up_area,
+                                landArea: p.land_area,
+                                floors: p.floors,
+                                location: p.city,
+                                state: p.state,
+                                packageType: p.package,
+                                finalResponse: {
+                                    ...p,
+                                    projectId: p.id
+                                }
+                            }
+                        });
+                    });
+
+                    // Map interior estimates (grouped by customer_name)
+                    interiorRes.data.forEach((p: any) => {
+                        if (!p.items) return;
+                        
+                        backendProjects.push({
+                            id: `backend_i_${p.id}`,
+                            type: 'INTERIOR',
+                            date: Date.now(),
+                            state: 'Tamil Nadu', 
+                            city: p.customer_name,
+                            packageName: p.package_name || 'Premium', 
+                            totalCost: p.total_cost,
+                            userName: state.userName,
+                            interiorData: {
+                                ...initialState.interior,
+                                packageType: p.package_name || 'Premium',
+                                state: 'Tamil Nadu',
+                                location: p.customer_name,
+                                totalCost: p.total_cost,
+                                rooms: Array.from(new Set(p.items.map((i: any) => i.work_name))),
+                                roomConfigs: (() => {
+                                    const configs: any = {};
+                                    p.items.forEach((item: any) => {
+                                        if (!configs[item.work_name]) configs[item.work_name] = [];
+                                        configs[item.work_name].push(item);
+                                    });
+                                    return configs;
+                                })(),
+                                calculationResult: {
+                                    rooms: p.items.map((i: any) => ({
+                                        room_name: i.work_name,
+                                        room_total_cost: i.item_cost
+                                    })),
+                                    overall_grand_total: p.total_cost,
+                                    ai_multiplier_applied: p.ai_multiplier
+                                }
+                            }
+                        });
+                    });
+
+                    // Sync: Create a clean list from backend projects
+                    // Any local project that has a backend prefix (backend_c_ or backend_i_) 
+                    // but is NOT in the backend list should be REMOVED
+                    const newProjects = [...localProjects.filter(lp => !lp.id.startsWith('backend_c_') && !lp.id.startsWith('backend_i_'))];
+                    
+                    backendProjects.forEach(bp => {
+                        newProjects.push(bp);
+                    });
+
+                    // Sort by date descending
+                    newProjects.sort((a, b) => b.date - a.date);
+
+                    if (JSON.stringify(newProjects) !== JSON.stringify(localProjects)) {
+                        const storageKey = state.userId ? `projects_list_${state.userId}` : `projects_list_${state.userName}`;
+                        localStorage.setItem(storageKey, JSON.stringify(newProjects));
+                        setRefreshLocal(prev => !prev);
+                    }
+                } catch (error) {
+                    console.error('Failed to sync projects:', error);
+                }
+            }
+        };
+
+        syncProjects();
+    }, [state.isLoggedIn, state.userId, state.userName]);
+
+    // 3. Sync user profile (name, phone, image) on load
+    useEffect(() => {
+        const syncProfile = async () => {
+            if (state.isLoggedIn && state.userId) {
+                try {
+                    const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/api/get-profile/${state.userId}/`);
+                    const data = response.data;
+                    
+                    setState(prev => ({
+                        ...prev,
+                        userName: data.full_name || prev.userName,
+                        userEmail: data.email || prev.userEmail,
+                        userPhone: data.phone_number || prev.userPhone,
+                        profileImage: data.profile_image || prev.profileImage
+                    }));
+                } catch (err) {
+                    console.error('Failed to sync profile:', err);
+                }
+            }
+        };
+        syncProfile();
+    }, [state.isLoggedIn, state.userId]);
 
     const updateConstruction = (data: Partial<ProjectState['construction']>) => {
         setState(prev => ({ ...prev, construction: { ...prev.construction, ...data } }));
@@ -116,10 +257,32 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const setUserName = (name: string) => {
-        setState(prev => ({ ...prev, userName: name, isLoggedIn: true }));
+        setState(prev => ({ 
+            ...prev, 
+            userName: name, 
+            isLoggedIn: true,
+            construction: initialState.construction,
+            interior: initialState.interior 
+        }));
     };
 
-    const updateProfile = (data: { name: string; email: string; phone: string; userId?: string | null; profileImage?: string | null }) => {
+    const updateProfile = async (data: { name: string; email: string; phone: string; userId?: string | null; profileImage?: string | null }, skipSync: boolean = false) => {
+        // Sync with backend if logged in and not skipping
+        if (state.userId && !skipSync) {
+            try {
+                await axios.post(`${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}/api/update-profile/`, {
+                    user_id: state.userId,
+                    full_name: data.name,
+                    email: data.email,
+                    phone_number: data.phone,
+                    profile_image: data.profileImage
+                });
+                console.log('Profile synced with backend');
+            } catch (err) {
+                console.error('Failed to sync profile with backend:', err);
+            }
+        }
+
         setState(prev => ({ 
             ...prev, 
             userName: data.name, 
@@ -131,7 +294,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const logout = () => {
-        setState(prev => ({ ...prev, userName: '', userEmail: '', userPhone: '', userId: null, profileImage: null, isLoggedIn: false }));
+        setState(prev => ({ 
+            ...prev, 
+            userName: '', 
+            userEmail: '', 
+            userPhone: '', 
+            userId: null, 
+            profileImage: null, 
+            isLoggedIn: false,
+            construction: initialState.construction,
+            interior: initialState.interior
+        }));
     };
 
     const resetProject = () => {
@@ -143,33 +316,76 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const getProjects = (): SavedProject[] => {
-        const saved = localStorage.getItem(`projects_list_${state.userName}`);
+        const storageKey = state.userId ? `projects_list_${state.userId}` : `projects_list_${state.userName}`;
+        const saved = localStorage.getItem(storageKey);
+        
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                return Array.isArray(parsed) ? parsed : [];
             } catch (e) {
                 console.error('Failed to parse projects:', e);
+                return [];
             }
         }
+        
+        // Migration: If logged in but no projects under userId, check userName
+        if (state.userId) {
+            const oldSaved = localStorage.getItem(`projects_list_${state.userName}`);
+            if (oldSaved) {
+                try {
+                    const parsed = JSON.parse(oldSaved);
+                    if (Array.isArray(parsed)) {
+                        localStorage.setItem(storageKey, JSON.stringify(parsed));
+                        return parsed;
+                    }
+                } catch (e) {
+                    return [];
+                }
+            }
+        }
+        
         return [];
     };
 
-    const saveProject = (project: Omit<SavedProject, 'id' | 'date' | 'userName'>) => {
+    const saveProject = (project: Omit<SavedProject, 'id' | 'date' | 'userName'>, customId?: string) => {
         const projects = getProjects();
         const newProject: SavedProject = {
             ...project,
-            id: crypto.randomUUID(),
+            id: customId || crypto.randomUUID(),
             date: Date.now(),
             userName: state.userName
         };
         const updatedProjects = [newProject, ...projects];
-        localStorage.setItem(`projects_list_${state.userName}`, JSON.stringify(updatedProjects));
+        const storageKey = state.userId ? `projects_list_${state.userId}` : `projects_list_${state.userName}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
     };
 
-    const deleteProject = (id: string) => {
+    const deleteProject = async (id: string) => {
+        // If it's a backend project, delete from backend too
+        if (id.startsWith('backend_c_')) {
+            const backendId = parseInt(id.replace('backend_c_', ''));
+            try {
+                await constructionApi.deleteProject(backendId);
+                console.log('Construction project deleted from backend:', backendId);
+            } catch (err) {
+                console.error('Failed to delete construction project from backend:', err);
+            }
+        } else if (id.startsWith('backend_i_')) {
+            const backendId = parseInt(id.replace('backend_i_', ''));
+            try {
+                await interiorApi.deleteEstimate(backendId);
+                console.log('Interior estimate deleted from backend:', backendId);
+            } catch (err) {
+                console.error('Failed to delete interior estimate from backend:', err);
+            }
+        }
+
         const projects = getProjects();
         const updatedProjects = projects.filter(p => p.id !== id);
-        localStorage.setItem(`projects_list_${state.userName}`, JSON.stringify(updatedProjects));
+        const storageKey = state.userId ? `projects_list_${state.userId}` : `projects_list_${state.userName}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProjects));
+        setRefreshLocal(prev => !prev);
     };
 
     const loadProject = (id: string) => {

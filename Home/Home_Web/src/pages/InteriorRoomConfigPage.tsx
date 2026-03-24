@@ -141,15 +141,27 @@ const InteriorRoomConfigPage = () => {
 
     const handleSave = () => {
         const requests = Array.from(selectedItems).map(item => {
-            const dim = dimensions[item] || { l: '0', w: '0', unit: 'ft' };
-            const l = parseFloat(dim.l) || 0;
-            const w = parseFloat(dim.w) || 0;
+            const dim = dimensions[item] || { l: '0', w: '0', unit: 'Feet' };
+            const length = parseFloat(dim.l) || 0;
+            
+            let height = 0;
+            let depth = item.toLowerCase().includes('ceiling') ? 0.0 : 1.0;
+
+            const wStr = dim.w.toLowerCase();
+            if (wStr.includes('*') || wStr.includes('x')) {
+                const parts = wStr.split(/[*x]/);
+                height = parseFloat(parts[0]) || 0;
+                depth = parseFloat(parts[1]) || 1.0;
+            } else {
+                height = parseFloat(wStr) || 0;
+            }
+
             return {
                 customer_name: title,
                 work_type: item,
-                length: l,
-                height: w,
-                depth: 1.0,
+                length: length,
+                height: height,
+                depth: depth,
                 multiplier: 1.0,
                 packageId: 1,
                 unit_type: dim.unit === 'Feet' ? 'ft' : dim.unit === 'Inches' ? 'in' : 'mm'
@@ -170,9 +182,18 @@ const InteriorRoomConfigPage = () => {
         navigate(`/interior/selection/${state.interior.packageType}`);
     };
 
-    const isStep2Valid = Array.from(selectedItems).some(item => {
+    const isStep2Valid = Array.from(selectedItems).every(item => {
         const dim = dimensions[item];
-        return dim && parseFloat(dim.l) > 0 && parseFloat(dim.w) > 0;
+        if (!dim) return false;
+        const length = parseFloat(dim.l) || 0;
+        const wStr = dim.w.toLowerCase();
+        let height = 0;
+        if (wStr.includes('*') || wStr.includes('x')) {
+            height = parseFloat(wStr.split(/[*x]/)[0]) || 0;
+        } else {
+            height = parseFloat(wStr) || 0;
+        }
+        return length > 0 && height > 0;
     });
 
     if (step === 2) {
@@ -330,11 +351,20 @@ const DimensionCard = ({ title, data, onChange }: {
                     />
                 </div>
                 <div className="flex-1">
-                    <label className="text-[11px] font-bold text-[#94A3B8] mb-2 block">HEIGHT/DEPTH</label>
+                    <label className="text-[11px] font-bold text-[#94A3B8] mb-2 block">
+                        {title.toLowerCase().includes('ceiling') ? 'HEIGHT' : 'HEIGHT*DEPTH'}
+                    </label>
                     <input
                         type="text"
                         value={data.w}
-                        onChange={e => onChange('w', e.target.value)}
+                        onChange={e => {
+                            const val = e.target.value;
+                            if (title.toLowerCase().includes('ceiling')) {
+                                if (/^[0-9.]*$/.test(val)) onChange('w', val);
+                            } else {
+                                if (/^[0-9.*x ]*$/.test(val)) onChange('w', val);
+                            }
+                        }}
                         placeholder="0.0"
                         className="w-full h-12 bg-[#F1F5F9] rounded-xl px-4 outline-none focus:border focus:border-[#2962FF] text-black font-medium"
                     />

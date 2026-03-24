@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import axios from 'axios';
 import { Download, Save, XCircle, CheckCircle2 } from 'lucide-react';
+import { generateConstructionReport, generateInteriorReport } from '../utils/PdfGenerator';
 
 const TotalProjectCostPage = () => {
     const { state, updateConstruction, updateInterior, resetProject, saveProject } = useProject();
@@ -25,19 +26,31 @@ const TotalProjectCostPage = () => {
         }
         setIsSaving(true);
         setSaveMessage('');
-        const projectType = isConstructionSelected && isInteriorSelected ? 'TOTAL' : 
-                           isConstructionSelected ? 'CONSTRUCTION' : 'INTERIOR';
-
         try {
-            saveProject({
-                type: projectType,
-                state: state.construction.state || state.interior.state,
-                city: state.construction.location || state.interior.location,
-                packageName: state.construction.packageType || state.interior.packageType,
-                totalCost: (isConstructionSelected ? constructionTotal : 0) + (isInteriorSelected ? interiorTotal : 0),
-                constructionData: isConstructionSelected ? state.construction : undefined,
-                interiorData: isInteriorSelected ? state.interior : undefined
-            });
+            if (isConstructionSelected) {
+                const projId = state.construction.finalResponse?.projectId || state.construction.finalResponse?.id;
+                saveProject({
+                    type: 'CONSTRUCTION',
+                    state: state.construction.state,
+                    city: state.construction.location,
+                    packageName: state.construction.packageType,
+                    totalCost: constructionTotal,
+                    constructionData: state.construction
+                }, projId ? `backend_c_${projId}` : undefined);
+            }
+
+            if (isInteriorSelected) {
+                // Interior doesn't have a backend project ID yet, so we use a deterministic but local-feeling ID
+                // Or just let it use UUID for now until backend supports interior projects fully
+                saveProject({
+                    type: 'INTERIOR',
+                    state: state.interior.state,
+                    city: state.interior.location,
+                    packageName: state.interior.packageType,
+                    totalCost: interiorTotal,
+                    interiorData: state.interior
+                });
+            }
             setSaveMessage('Project saved successfully!');
         } catch (error) {
             console.error('Error saving project:', error);
@@ -59,7 +72,38 @@ const TotalProjectCostPage = () => {
             alert('Please select at least one item to download.');
             return;
         }
-        alert('Downloading PDF report for selected items...');
+        
+        if (isConstructionSelected) {
+            // Map breakdown to format expected by PdfGenerator
+            const formattedBreakdown: Record<string, any> = {};
+            const rawBreakdown = state.construction.finalResponse?.breakdown || {};
+            
+            // If we don't have breakdown in state, it might be in totalCost only
+            // But usually ConstructionCostEstimate.tsx saves it in the context
+            
+            const getFloorCount = (floorStr: string) => {
+                if (!floorStr || floorStr === 'Ground') return 0;
+                const match = floorStr.match(/\d+/);
+                return match ? parseInt(match[0]) : 1;
+            };
+            const totalArea = state.construction.area * (getFloorCount(state.construction.floors) + 1);
+
+            generateConstructionReport(
+                { 
+                    totalOptimizedCost: state.construction.totalCost, 
+                    breakdown: state.construction.finalResponse?.breakdown || {} 
+                },
+                totalArea,
+                state.construction.unit || 'Sq. Feet'
+            );
+        }
+
+        if (isInteriorSelected && state.interior.calculationResult) {
+            generateInteriorReport(
+                state.interior.calculationResult,
+                state.interior.packageType || 'Interior'
+            );
+        }
     };
 
     const formatPrice = (price: number) => {
@@ -68,9 +112,14 @@ const TotalProjectCostPage = () => {
 
     return (
         <div className="p-6 w-full max-w-5xl mx-auto min-h-screen flex flex-col bg-gray-50/30">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900">Total Project Cost</h1>
-                <p className="text-slate-400 mt-1 font-medium">Project estimation summary</p>
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900">Total Project Cost</h1>
+                    <p className="text-slate-400 mt-1 font-medium">Project estimation summary</p>
+                </div>
+                <button onClick={handleDownloadReport} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <Download size={24} className="text-slate-900" />
+                </button>
             </div>
 
             {/* Total Cost Card - Large & Vibrant */}
@@ -162,7 +211,7 @@ const TotalProjectCostPage = () => {
 
                     <button
                         onClick={resetProject}
-                        className="py-4 rounded-2xl border-2 border-orange-400 text-orange-500 bg-white font-bold hover:bg-orange-50 transition-colors shadow-sm"
+                        className="py-4 rounded-2xl border-2 border-blue-400 text-blue-500 bg-white font-bold hover:bg-blue-50 transition-colors shadow-sm"
                     >
                         Clear All
                     </button>

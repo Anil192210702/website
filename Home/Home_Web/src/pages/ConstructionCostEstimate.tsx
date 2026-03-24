@@ -15,6 +15,7 @@ const ConstructionCostEstimate = () => {
     const { state, updateConstruction, saveProject } = useProject();
     const navigate = useNavigate();
     const { packageType } = useParams<{ packageType: string }>();
+    const creatingRef = React.useRef(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -23,7 +24,22 @@ const ConstructionCostEstimate = () => {
 
     useEffect(() => {
         const fetchEstimate = async () => {
+            if (creatingRef.current) return;
+            creatingRef.current = true;
             try {
+                // Check if we already have a valid result in context to avoid re-calculating on refresh
+                if (state.construction.finalResponse?.breakdown && state.construction.totalCost > 0) {
+                    const rawBreakdown = state.construction.finalResponse.breakdown;
+                    const mappedBreakdown: MaterialCost[] = Object.entries(rawBreakdown).map(([name, data]: [string, any]) => ({
+                        name: name,
+                        cost: data.cost
+                    }));
+                    setBreakdown(mappedBreakdown);
+                    setTotal(state.construction.totalCost);
+                    setLoading(false);
+                    return;
+                }
+
                 setLoading(true);
                 
                 const pkgType = (packageType || state.construction.packageType || 'basic').toLowerCase();
@@ -36,16 +52,24 @@ const ConstructionCostEstimate = () => {
                     package: pkgType
                 });
                 
+                // Helper to extract floor count from strings like "Ground", "G + 1", "Ground + 2"
+                const getFloorCount = (floorStr: string) => {
+                    if (!floorStr || floorStr === 'Ground') return 0;
+                    const match = floorStr.match(/\d+/);
+                    return match ? parseInt(match[0]) : 1;
+                };
+
+                const floorCount = getFloorCount(state.construction.floors);
+
                 // 1. Create Project
                 const createRes = await constructionApi.createProject({
-                    user: state.userId || 1, // Use dynamic user ID or fallback to 1
+                    user: state.userId || 1,
                     state: state.construction.state || 'Tamil Nadu',
                     city: state.construction.location || 'Chennai',
-                    land_area: state.construction.area || 1000,
+                    land_area: state.construction.landArea || 1000,
                     built_up_area: state.construction.area || 1000,
                     unit: state.construction.unit === 'Sq. Feet' ? 'sqft' : 'sqm',
-                    floors: state.construction.floors === 'Ground' ? 0 : 
-                            (state.construction.floors === 'G + 1' || state.construction.floors === 'Ground + 1') ? 1 : 2,
+                    floors: floorCount,
                     package: pkgType
                 });
 
@@ -53,7 +77,10 @@ const ConstructionCostEstimate = () => {
                 const projectId = createRes.data.project_id;
 
                 // 2. Calculate Base Budget
-                const calcRes = await constructionApi.calculateBase(projectId);
+                await constructionApi.calculateBase(projectId);
+                
+                // 3. Calculate Total AI Cost
+                const calcRes = await constructionApi.calculateTotal(projectId);
                 console.log('Calculation response:', calcRes.data);
 
                 // Map the backend breakdown object to the frontend's expected format
@@ -64,8 +91,14 @@ const ConstructionCostEstimate = () => {
                 }));
 
                 setBreakdown(mappedBreakdown);
-                setTotal(calcRes.data.base_total_cost);
-                updateConstruction({ totalCost: calcRes.data.base_total_cost });
+                setTotal(calcRes.data.total_ai_cost);
+                updateConstruction({ 
+                    totalCost: calcRes.data.total_ai_cost,
+                    finalResponse: { 
+                        ...calcRes.data,
+                        projectId: projectId 
+                    } 
+                });
             } catch (err: any) {
                 console.error('Estimate Fetch Error:', err);
                 console.log('Error Response Data:', err.response?.data);
@@ -80,11 +113,12 @@ const ConstructionCostEstimate = () => {
                 setError(errorMessage);
             } finally {
                 setLoading(false);
+                creatingRef.current = false;
             }
         };
 
         fetchEstimate();
-    }, [packageType, state.construction.area, state.construction.packageType, state.construction.floors, state.construction.location, state.construction.state]);
+    }, [packageType, state.construction.area, state.construction.landArea, state.construction.packageType, state.construction.floors, state.construction.location, state.construction.state]);
 
     const handleDownloadReport = () => {
         if (breakdown.length > 0) {
@@ -98,9 +132,16 @@ const ConstructionCostEstimate = () => {
                 };
             });
             
+            const getFloorCount = (floorStr: string) => {
+                if (!floorStr || floorStr === 'Ground') return 0;
+                const match = floorStr.match(/\d+/);
+                return match ? parseInt(match[0]) : 1;
+            };
+            const totalArea = state.construction.area * (getFloorCount(state.construction.floors) + 1);
+
             generateConstructionReport(
                 { totalOptimizedCost: total, breakdown: formattedBreakdown },
-                state.construction.area || 0,
+                totalArea,
                 state.construction.unit || 'Sq. Feet'
             );
         } else {
@@ -121,7 +162,7 @@ const ConstructionCostEstimate = () => {
             packageName: state.construction.packageType,
             totalCost: total,
             constructionData: state.construction
-        });
+        }, `backend_c_${state.construction.finalResponse?.projectId || state.construction.finalResponse?.id || 'manual'}`);
         alert('Project saved successfully!');
     };
 
@@ -131,7 +172,7 @@ const ConstructionCostEstimate = () => {
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
                     <ArrowLeft size={24} className="text-black" />
                 </button>
-                <h1 className="text-lg font-bold text-[#1F2937]">Cost Estimate</h1>
+                <h1 className="text-lg font-bold text-[#1F2937]">Cost Estimate: {state.construction.location}</h1>
                 <div className="flex gap-2">
                     <button onClick={handleDownloadReport} className="p-2">
                         <Download size={24} className="text-black" />
@@ -158,14 +199,39 @@ const ConstructionCostEstimate = () => {
 
                             <div className="flex justify-between items-center text-sm">
                                 <div>
-                                    <p className="text-white/70 text-xs">Total Built-up Area</p>
-                                    <p className="text-white font-bold text-base">{state.construction.area} {state.construction.unit}</p>
+                                    <p className="text-white/70 text-xs text-nowrap">Total Built-up Area</p>
+                                    <p className="text-white font-bold text-base">
+                                        {state.construction.area * (
+                                            (() => {
+                                                const f = state.construction.floors;
+                                                if (!f || f === 'Ground') return 0;
+                                                const m = f.match(/\d+/);
+                                                return m ? parseInt(m[0]) : 1;
+                                            })() + 1
+                                        )} {state.construction.unit}
+                                    </p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-white/70 text-xs">Cost per Sq. Ft.</p>
-                                    <p className="text-white font-bold text-base">₹{Math.round(total / state.construction.area).toLocaleString('en-IN')}</p>
+                                    <p className="text-white/70 text-xs">Cost per Unit</p>
+                                    <p className="text-white font-bold text-base">
+                                        ₹{Math.round(total / (state.construction.area * (
+                                            (() => {
+                                                const f = state.construction.floors;
+                                                if (!f || f === 'Ground') return 0;
+                                                const m = f.match(/\d+/);
+                                                return m ? parseInt(m[0]) : 1;
+                                            })() + 1
+                                        ))).toLocaleString('en-IN')}
+                                    </p>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3 p-4 bg-blue-50/50 rounded-2xl mb-6 border border-blue-100/50">
+                            <Plus size={18} className="text-blue-600 mt-0.5 shrink-0 rotate-45" />
+                            <p className="text-[13px] text-gray-600 leading-relaxed font-semibold">
+                                Total cost is adjusted using construction AI models based on your selected state and city rates
+                            </p>
                         </div>
 
                         <h4 className="font-bold text-[#1F2937] text-lg mb-4">Material Breakdown</h4>

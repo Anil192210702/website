@@ -27,10 +27,14 @@ const LoginPage = () => {
             setError('Please fill all fields');
             return;
         }
-        if (!email.trim().toLowerCase().endsWith('@gmail.com')) {
-            setError('Only @gmail.com email addresses are accepted');
+        const lowerEmail = email.trim().toLowerCase();
+        if (!lowerEmail.includes('@') || !lowerEmail.endsWith('.com')) {
+            setError('Please enter a valid email address (must contain @ and end with .com)');
             return;
         }
+
+
+
 
         setIsLoading(true);
         try {
@@ -48,8 +52,9 @@ const LoginPage = () => {
                     name: displayName,
                     email: data.email || email.trim().toLowerCase(),
                     phone: data.phone_number || '',
-                    userId: data.user_id?.toString() || null
-                });
+                    userId: data.user_id?.toString() || null,
+                    profileImage: data.profile_image || null
+                }, true); // Pass true to skip redundant sync call on login
                 
                 navigate('/');
             }
@@ -81,7 +86,7 @@ const LoginPage = () => {
                 </button>
             </div>
 
-            <div className="flex flex-col px-6 md:w-full max-w-7xl md:mx-auto w-full flex-1">
+            <div className="flex flex-col px-6 md:w-full max-w-md md:mx-auto w-full flex-1 justify-center py-10">
                 {/* Top Logos Row - Exactly matching HomePlanner Design */}
                 <div className="w-full flex justify-between items-center py-6">
                     <img src={simatsLogo} alt="Simats Logo" className="w-20 h-20 object-contain" />

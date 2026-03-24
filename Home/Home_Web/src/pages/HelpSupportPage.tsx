@@ -66,7 +66,10 @@ const HelpSupportPage: React.FC = () => {
                         <ChevronRight size={20} className="text-slate-300" />
                     </a>
                     <div className="mx-4 h-px bg-slate-50" />
-                    <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-colors">
+                    <button 
+                        onClick={() => window.open("https://www.instagram.com/reel/DV2zgz-EZKW/?igsh=MXIybG12d2hhOTRreg==", "_blank", "noopener,noreferrer")}
+                        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-colors"
+                    >
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-50 text-blue-600">
                                 <PlayCircle size={20} />

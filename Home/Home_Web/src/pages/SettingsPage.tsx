@@ -112,32 +112,6 @@ const SettingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Developer / Debug Section */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-bold text-slate-500 mb-3 px-1">Developer Tools</h3>
-                    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-                        <button
-                            onClick={async () => {
-                                try {
-                                    const res = await constructionApi.seedRates();
-                                    alert(res.data.message);
-                                } catch (err) {
-                                    alert('Failed to seed database. Is the server running?');
-                                }
-                            }}
-                            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-2xl"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-500">
-                                    <Layers size={18} />
-                                </div>
-                                <span className="text-[15px] font-semibold text-slate-900">Initialize Database (Seed Rates)</span>
-                            </div>
-                            <ChevronRight size={20} className="text-slate-400" />
-                        </button>
-                    </div>
-                </div>
-
                 {/* Logout Button */}
                 <button
                     onClick={handleLogout}

@@ -3,7 +3,7 @@ import { generateInteriorReport } from '../utils/PdfGenerator';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProject } from '../context/ProjectContext';
 import axios from 'axios';
-import { ArrowLeft as ArrowLeftIcon, Download as DownloadIcon, Plus } from 'lucide-react';
+import { ArrowLeft as ArrowLeftIcon, Download as DownloadIcon, Plus, Sparkles } from 'lucide-react';
 import { interiorApi } from '../services/api';
 import livingRoom from '../assets/interior/living_room.png';
 import bedroom from '../assets/interior/bedroom.png';
@@ -46,8 +46,16 @@ const InteriorTotalCostPage = () => {
 
                 // Aggregate all requests and add packageId
                 const finalRequests: any[] = [];
-                Object.values(state.interior.roomConfigs || {}).forEach(roomReqs => {
-                    const mappedReqs = roomReqs.map(r => ({ ...r, packageId: id }));
+                Object.values(state.interior.roomConfigs || {}).forEach((roomReqs, idx) => {
+                    const mappedReqs = roomReqs.map((r, rIdx) => ({ 
+                        ...r, 
+                        packageId: id,
+                        // Pass location only on the first item of the first room to avoid redundant calculation
+                        ...(idx === 0 && rIdx === 0 ? { 
+                            state: state.interior.state, 
+                            city: state.interior.location 
+                        } : {})
+                    }));
                     finalRequests.push(...mappedReqs);
                 });
 
@@ -57,16 +65,31 @@ const InteriorTotalCostPage = () => {
                     return;
                 }
 
+                // Check if we already have a valid result in context to avoid re-calculating on refresh
+                if (state.interior.calculationResult && state.interior.totalCost > 0) {
+                    setResult(state.interior.calculationResult);
+                    setLoading(false);
+                    return;
+                }
+
                 try {
-                    const res = await interiorApi.calculateInterior(finalRequests);
+                    const res = await interiorApi.calculate({
+                        state: state.interior.state,
+                        city: state.interior.location,
+                        items: finalRequests
+                    });
                     setResult(res.data);
-                    updateInterior({ totalCost: res.data.overall_grand_total });
+                    updateInterior({ 
+                        totalCost: res.data.overall_grand_total,
+                        calculationResult: res.data 
+                    });
                 } catch (e: any) {
                     console.error('API Error, falling back to mock:', e);
                     // Fallback mock response matching Android UI template
-                    const mockRooms = state.interior.rooms.map(r => ({
+                    const mockRooms = state.interior.rooms.map((r, idx) => ({
                         room_name: r,
-                        room_total_cost: Math.floor(Math.random() * 50000) + 20000
+                        // Use a deterministic "random" value based on name length and index
+                        room_total_cost: 25000 + (r.length * 1000) + (idx * 500)
                     }));
                     const total = mockRooms.reduce((acc, r) => acc + r.room_total_cost, 0);
                     const mockResult = {
@@ -75,7 +98,10 @@ const InteriorTotalCostPage = () => {
                         ai_multiplier_applied: 1.15
                     };
                     setResult(mockResult);
-                    updateInterior({ totalCost: mockResult.overall_grand_total });
+                    updateInterior({ 
+                        totalCost: mockResult.overall_grand_total,
+                        calculationResult: mockResult 
+                    });
                 }
 
             } catch (err) {
@@ -120,7 +146,7 @@ const InteriorTotalCostPage = () => {
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
                     <ArrowLeftIcon size={24} className="text-black" />
                 </button>
-                <h1 className="text-lg font-bold text-[#1F2937]">Total {packageType} Interior Cost</h1>
+                <h1 className="text-lg font-bold text-[#1F2937]">Total {packageType} Interior: {state.interior.location}</h1>
                 <button onClick={handleDownloadReport} className="p-2">
                     <DownloadIcon size={24} className="text-black" />
                 </button>
@@ -177,16 +203,13 @@ const InteriorTotalCostPage = () => {
 
                         {/* Grand Total Card */}
                         <div className="bg-white border border-gray-300 rounded-[24px] p-6 shadow-sm mb-12">
-                            <div className="flex justify-between items-center text-sm font-semibold mb-3">
-                                <span className="text-[#64748B]">Base Package Total</span>
-                                <span className="text-[#1E293B]">₹{result?.rooms.reduce((a, b) => a + b.room_total_cost, 0).toLocaleString('en-IN') || 0}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm mb-4">
-                                <span className="text-[#64748B]">Location Multiplier</span>
-                                <span className="text-[#10B981] font-extrabold text-[15px]">× {result?.ai_multiplier_applied?.toFixed(2) || '1.00'}</span>
+                            <div className="flex items-start gap-3 p-3.5 bg-blue-50/50 rounded-2xl mb-6 border border-blue-100/50">
+                                <Sparkles size={18} className="text-blue-600 mt-0.5 shrink-0" />
+                                <p className="text-[13px] text-gray-600 leading-relaxed font-semibold">
+                                    Total cost is adjusted using interior multiplier based on your selected state and city rates
+                                </p>
                             </div>
 
-                            <div className="h-px bg-[#E2EBFB] w-full my-4"></div>
 
                             <div className="flex justify-between items-end pt-2">
                                 <div>

@@ -1,13 +1,6 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import logoUrl from '../assets/interface_logo.jpeg';
-
-// Add type declaration for jspdf-autotable
-declare module 'jspdf' {
-    interface jsPDF {
-        autoTable: any;
-    }
-}
 
 export const generateConstructionReport = async (data: any, area: number, unit: string) => {
     const doc = new jsPDF();
@@ -51,12 +44,12 @@ export const generateConstructionReport = async (data: any, area: number, unit: 
         `₹${(mat.cost || 0).toLocaleString('en-IN')}`
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
         startY: y,
         head: [['Material', 'Quantity', 'Cost']],
         body: tableData,
         theme: 'striped',
-        headStyles: { fillStyle: '#2563EB' }
+        headStyles: { fillColor: '#2556D6' }
     });
     
     doc.save('Construction_Report.pdf');
@@ -115,12 +108,12 @@ export const generateInteriorReport = async (data: any, packageType: string) => 
         }
     });
     
-    doc.autoTable({
+    autoTable(doc, {
         startY: y,
         head: [['Work Description', 'Cost']],
         body: tableData,
         theme: 'plain',
-        headStyles: { fillStyle: '#2563EB', textColor: '#FFFFFF' },
+        headStyles: { fillColor: '#2556D6', textColor: '#FFFFFF' },
         columnStyles: {
             0: { cellWidth: 140 },
             1: { cellWidth: 40, halign: 'right' }
@@ -130,29 +123,25 @@ export const generateInteriorReport = async (data: any, packageType: string) => 
     doc.save('Interior_Report.pdf');
 };
 
-const generateDataUrl = (url: string): Promise<string> => {
+const loadImage = (url: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg'));
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+            console.warn('Failed to load image:', url);
+            reject(new Error(`Failed to load image at ${url}`));
         };
-        img.onerror = reject;
         img.src = url;
     });
 };
 
 const drawBranding = async (doc: jsPDF) => {
     try {
-        const dataUrl = await generateDataUrl(logoUrl);
-        doc.addImage(dataUrl, 'JPEG', 20, 15, 15, 15);
+        const img = await loadImage(logoUrl);
+        doc.addImage(img, 'JPEG', 20, 15, 15, 15);
     } catch (e) {
         console.error('Failed to load logo for PDF:', e);
+        // Continue without logo if it fails, don't break the whole report
     }
     
     doc.setFontSize(20);

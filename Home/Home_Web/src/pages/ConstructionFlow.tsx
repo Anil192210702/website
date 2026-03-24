@@ -125,16 +125,16 @@ const ConstructionFlow = () => {
                         <div
                             key={p.id}
                             onClick={() => setPkg(p.id)}
-                            className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 ${pkg === p.id ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white hover:border-orange-200'}`}
+                            className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-4 ${pkg === p.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-200'}`}
                         >
-                            <div className={`p-3 rounded-full ${pkg === p.id ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-500'}`}>
+                            <div className={`p-3 rounded-full ${pkg === p.id ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
                                 <p.icon size={24} />
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-semibold text-gray-800">{p.id} Package</h3>
                                 <p className="text-xs text-gray-500 mt-1">{p.desc}</p>
                             </div>
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${pkg === p.id ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-300'}`}>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${pkg === p.id ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300'}`}>
                                 {pkg === p.id && <div className="w-2 h-2 bg-white rounded-full"></div>}
                             </div>
                         </div>
@@ -142,7 +142,7 @@ const ConstructionFlow = () => {
                 </div>
                 <button
                     onClick={handleNextStep1}
-                    className="mt-auto w-full bg-orange-600 text-white py-3.5 rounded-xl font-medium shadow-lg hover:bg-orange-700 transition"
+                    className="mt-auto w-full bg-blue-600 text-white py-3.5 rounded-xl font-medium shadow-lg hover:bg-blue-700 transition"
                 >
                     Next
                 </button>
@@ -164,7 +164,7 @@ const ConstructionFlow = () => {
                                 setSelectedState(e.target.value);
                                 setLoc('');
                             }}
-                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all shadow-sm cursor-pointer"
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer"
                         >
                             <option value="" disabled>Select a State</option>
                             {Object.keys(statesAndDistricts).map(s => <option key={s} value={s}>{s}</option>)}
@@ -183,7 +183,7 @@ const ConstructionFlow = () => {
                                     if (foundState) setSelectedState(foundState);
                                 }
                             }}
-                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all shadow-sm cursor-pointer"
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer"
                         >
                             <option value="" disabled>Select a City</option>
                             {(selectedState ? statesAndDistricts[selectedState] : allCities).map((c: string) => <option key={c} value={c}>{c}</option>)}
@@ -197,7 +197,7 @@ const ConstructionFlow = () => {
                             value={area}
                             onChange={e => setArea(Number(e.target.value))}
                             placeholder="e.g. 1000"
-                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all shadow-sm"
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
                         />
                     </div>
 
@@ -208,7 +208,7 @@ const ConstructionFlow = () => {
                                 <button
                                     key={f}
                                     onClick={() => setFloors(f)}
-                                    className={`flex-1 py-3 px-2 rounded-xl border text-sm font-medium transition-all ${floors === f ? 'bg-orange-600 text-white border-orange-600 shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                    className={`flex-1 py-3 px-2 rounded-xl border text-sm font-medium transition-all ${floors === f ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     {f}
                                 </button>
@@ -221,7 +221,7 @@ const ConstructionFlow = () => {
                     <button
                         onClick={handleNextStep2}
                         disabled={!loc}
-                        className="w-full bg-orange-600 text-white py-3.5 rounded-xl font-medium shadow-[0_4px_14px_rgba(234,88,12,0.39)] hover:bg-orange-700 transition disabled:bg-gray-300 disabled:shadow-none"
+                        className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-medium shadow-[0_4px_14px_rgba(37,99,235,0.39)] hover:bg-blue-700 transition disabled:bg-gray-300 disabled:shadow-none"
                     >
                         View Material Details
                     </button>
@@ -275,7 +275,7 @@ const ConstructionFlow = () => {
 
                             return (
                                 <div key={idx} className="bg-white p-4 rounded-xl border border-gray-100 flex items-center gap-4 shadow-sm">
-                                    <div className={`p-3 rounded-full flex-shrink-0 ${isPremium ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
+                                    <div className={`p-3 rounded-full flex-shrink-0 ${isPremium ? 'bg-blue-50 text-blue-600' : 'bg-blue-50 text-blue-600'}`}>
                                         <m.icon size={20} />
                                     </div>
                                     <div className="flex-1">
@@ -293,20 +293,12 @@ const ConstructionFlow = () => {
                 </div>
 
                 <div className="mt-auto space-y-3 pt-4">
-                    {pkg === 'Basic' && (
-                        <button
-                            onClick={handleOptimization}
-                            className="w-full bg-indigo-50 text-indigo-700 border border-indigo-200 py-3.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-indigo-100 transition shadow-sm"
-                        >
-                            View AI Optimization
-                        </button>
-                    )}
                     <button
                         onClick={handleCalculate}
                         className={`w-full py-3.5 rounded-xl font-medium shadow-lg transition text-white
                             ${isLuxury ? 'bg-slate-800 hover:bg-slate-900 shadow-[0_4px_14px_rgba(15,23,42,0.39)]' :
                                 isPremium ? 'bg-blue-600 hover:bg-blue-700 shadow-[0_4px_14px_rgba(37,99,235,0.39)]' :
-                                    'bg-orange-600 hover:bg-orange-700 shadow-[0_4px_14px_rgba(234,88,12,0.39)]'}`}
+                                    'bg-blue-600 hover:bg-blue-700 shadow-[0_4px_14px_rgba(37,99,235,0.39)]'}`}
                     >
                         Calculate Budget
                     </button>

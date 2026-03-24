@@ -11,7 +11,13 @@ const InteriorPackagePage = () => {
     const [selectedPackage, setSelectedPackage] = useState(state.interior.packageType || 'Premium');
 
     const handleContinue = () => {
-        updateInterior({ packageType: selectedPackage });
+        updateInterior({ 
+            packageType: selectedPackage,
+            rooms: [],
+            roomConfigs: {},
+            totalCost: 0,
+            calculationResult: undefined
+        });
         navigate(`/interior/selection/${selectedPackage}`);
     };
 

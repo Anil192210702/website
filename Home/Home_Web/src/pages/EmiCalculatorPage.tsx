@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface EmiSchedule {
     year: number;
@@ -161,14 +161,6 @@ const EmiCalculatorPage = () => {
                 </div>
             </div>
 
-            {/* Fixed Bottom Action Bar */}
-            <div className="fixed bottom-[60px] md:bottom-0 left-0 right-0 w-full max-w-7xl mx-auto p-4 bg-gradient-to-t from-white via-white to-transparent z-20 pointer-events-none">
-                <div className="flex gap-3 pointer-events-auto">
-                    <button className="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-gray-800 transition shadow-xl shadow-gray-200">
-                        <Download size={22} /> Download PDF Report
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };

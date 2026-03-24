@@ -28,21 +28,21 @@ const ContactUsPage = () => {
         },
         {
             title: 'Email Support',
-            subtitle: 'support@homeplanner.ai',
+            subtitle: 'crazyanil118@gmail.com',
             icon: Mail,
-            onClick: () => window.open('mailto:support@homeplanner.ai')
+            onClick: () => window.open('mailto:crazyanil118@gmail.com')
         },
         {
-            title: 'Live Chat',
-            subtitle: 'Available 24/7',
+            title: 'WhatsApp',
+            subtitle: '8978633246',
             icon: MessageCircle,
-            onClick: () => alert('Live Chat starting soon!')
+            onClick: () => window.open('https://wa.me/918978633246', '_blank')
         },
         {
             title: 'Visit Office',
             subtitle: 'View Map',
             icon: MapPin,
-            onClick: () => window.open('https://maps.google.com/?q=SIMATS+University,+Saveetha+Nagar,+Thandalam,+Chennai+-+602105')
+            onClick: () => window.open('https://maps.google.com/?q=Saveetha+school+of+engineering+,+Thandalam,Chennai-602105,Tamilnadu')
         }
     ];
 
@@ -74,8 +74,8 @@ const ContactUsPage = () => {
                 <div className="bg-[#F8FAFC] rounded-[32px] p-8 text-center border border-gray-100">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">HomePlanner HQ</h3>
                     <p className="text-gray-500 text-sm leading-relaxed mb-6">
-                        SIMATS University, Saveetha Nagar, Thandalam<br />
-                        Chennai - 602105
+                        Saveetha school of engineering , <br />
+                        Thandalam, Chennai-602105, Tamilnadu
                     </p>
                     
                     <div className="flex items-center justify-center gap-2 text-gray-500 text-sm">
@@ -85,13 +85,19 @@ const ContactUsPage = () => {
                 </div>
 
                 <div className="mt-16 flex justify-center gap-12">
-                    <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                    <div 
+                        onClick={() => window.open('https://www.linkedin.com/posts/anil-kumar-80a7393a7_ai-based-homebuild-planner-construction-share-7429795446480416768-GBFQ?utm_source=social_share_send&utm_medium=android_app&rcm=ACoAAGOZOEoB6QxGhNIy23k8Yr0UP9ZDriWUdiY&utm_campaign=copy_link', '_blank')}
+                        className="flex flex-col items-center gap-2 cursor-pointer group"
+                    >
                         <div className="w-12 h-12 rounded-full bg-[#F8FAFC] flex items-center justify-center group-hover:bg-blue-50 transition-colors">
                             <Linkedin size={20} className="text-gray-600 group-hover:text-blue-600" />
                         </div>
                         <span className="text-xs font-medium text-gray-500">LinkedIn</span>
                     </div>
-                    <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                    <div 
+                        onClick={() => window.open('https://www.instagram.com/reel/DV2zgz-EZKW/?igsh=MXIybG12d2hhOTRreg==', '_blank')}
+                        className="flex flex-col items-center gap-2 cursor-pointer group"
+                    >
                         <div className="w-12 h-12 rounded-full bg-[#F8FAFC] flex items-center justify-center group-hover:bg-pink-50 transition-colors">
                             <Instagram size={20} className="text-gray-600 group-hover:text-pink-600" />
                         </div>

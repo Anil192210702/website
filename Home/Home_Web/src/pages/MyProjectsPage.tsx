@@ -111,30 +111,34 @@ const MyProjectsPage = () => {
                     <div className="grid gap-6">
                         {projects.map((project) => (
                             <div key={project.id} className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`px-3 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider ${
+                                <div className="flex justify-between items-start gap-4 mb-4">
+                                    <div className={`px-3 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider shrink-0 ${
                                         project.packageName?.toLowerCase() === 'luxury' ? 'bg-[#FFD1DC] text-[#D81B60]' :
                                         project.packageName?.toLowerCase() === 'premium' ? 'bg-[#E0F2F1] text-[#00796B]' :
                                         'bg-[#E8EAF6] text-[#3F51B5]'
                                     }`}>
                                         {project.packageName || 'BASIC'}
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-black text-slate-900">{formatCurrency(project.totalCost)}</p>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-xl font-black text-slate-900 leading-none">{formatCurrency(project.totalCost)}</p>
                                     </div>
                                 </div>
 
-                                <h3 className="text-lg font-bold text-slate-900 mb-1">
+                                <h3 className="text-lg font-bold text-slate-900 mb-1 leading-tight">
                                     {project.type === 'CONSTRUCTION' ? 'Construction Cost' : 
-                                     project.type === 'INTERIOR' ? 'Interior Cost' : 'Total Project Cost'}
+                                     project.type === 'INTERIOR' ? `Interior: ${project.city}` : 'Total Project Cost'}
                                 </h3>
 
-                                <div className="flex gap-4 mb-6">
-                                    <div className="text-[13px] text-slate-500 font-medium">
-                                        <span className="text-slate-400">State:</span> {project.state}
+                                <div className="flex flex-col gap-1 mb-6">
+                                    <div className="text-[13px] text-slate-500 font-medium flex items-center gap-1.5">
+                                        <span className="text-slate-400 font-semibold uppercase text-[10px]">State:</span> 
+                                        <span>{project.state}</span>
                                     </div>
-                                    <div className="text-[13px] text-slate-500 font-medium">
-                                        <span className="text-slate-400">City:</span> {project.city}
+                                    <div className="text-[13px] text-slate-500 font-medium flex items-center gap-1.5">
+                                        <span className="text-slate-400 font-semibold uppercase text-[10px] shrink-0">
+                                            {project.type === 'INTERIOR' ? 'Project Name:' : 'City:'}
+                                        </span> 
+                                        <span className="truncate" title={project.city}>{project.city}</span>
                                     </div>
                                 </div>
 

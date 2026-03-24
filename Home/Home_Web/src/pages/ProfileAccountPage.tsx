@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -10,18 +10,36 @@ import {
   Camera 
 } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
+import { validateFullName, validateEmail, validatePhone } from '../utils/validation';
 
 const ProfileAccountPage: React.FC = () => {
     const navigate = useNavigate();
     const { state, updateProfile } = useProject();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(state.userName);
     const [email, setEmail] = useState(state.userEmail);
     const [phone, setPhone] = useState(state.userPhone);
     const [profileImage, setProfileImage] = useState(state.profileImage);
+    const [error, setError] = useState('');
 
     const handleSave = () => {
+        setError('');
+        
+        if (!validateFullName(name)) {
+            setError('Full name should only contain letters and numbers');
+            return;
+        }
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address ending in .com');
+            return;
+        }
+        if (!validatePhone(phone)) {
+            setError('Phone number must start with 6,7,8,9 and be 10 digits');
+            return;
+        }
+
         updateProfile({ name, email, phone, profileImage });
         setIsEditing(false);
     };
@@ -78,6 +96,11 @@ const ProfileAccountPage: React.FC = () => {
             </div>
 
             <div className="max-w-xl mx-auto px-6 py-8">
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl text-sm font-semibold border border-red-100">
+                        {error}
+                    </div>
+                )}
                 {/* Profile Picture */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative group">
@@ -90,10 +113,19 @@ const ProfileAccountPage: React.FC = () => {
                         </div>
                         <label className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 text-white rounded-full border-4 border-white flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors shadow-lg">
                             <Camera size={18} />
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                            <input 
+                                type="file" 
+                                ref={fileInputRef}
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={handleImageChange} 
+                            />
                         </label>
                     </div>
-                    <button className="mt-4 text-blue-600 text-sm font-bold hover:underline">
+                    <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mt-4 text-blue-600 text-sm font-bold hover:underline"
+                    >
                         Change Photo
                     </button>
                 </div>
